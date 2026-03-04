@@ -16,3 +16,10 @@ struct Chat: Codable, Identifiable {
     let unreadCount: Int
     let isOnline: Bool
 }
+
+struct Message: Codable, Identifiable {
+    let id: String
+    let senderId: String
+    let text: String
+    let timestamp: Date
+}

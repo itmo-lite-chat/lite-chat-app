@@ -29,8 +29,12 @@ struct ChatListView: View {
                     )
                 } else {
                     List(vm.chats) { chat in
-                        ChatRowView(chat: chat)
-                            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        NavigationLink {
+                            ChatView(chat: chat)
+                        } label: {
+                            ChatRowView(chat: chat)
+                        }
+                        .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
                     }
                     .listStyle(.plain)
                 }

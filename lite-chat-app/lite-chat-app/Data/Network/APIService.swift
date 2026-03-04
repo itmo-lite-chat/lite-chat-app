@@ -14,7 +14,7 @@ enum APIError: LocalizedError {
     }
 }
 
-final class APIService: AuthRepositoryProtocol, ChatRepositoryProtocol {
+final class APIService: AuthRepositoryProtocol, ChatRepositoryProtocol, MessageRepositoryProtocol {
     static let shared = APIService()
     private init() {}
 
@@ -53,5 +53,29 @@ final class APIService: AuthRepositoryProtocol, ChatRepositoryProtocol {
                  lastMessage: "",
                  lastMessageTime: now.addingTimeInterval(-5*24*60*60), unreadCount: 0, isOnline: false),
         ]
+    }
+
+    func fetchMessages(chatId: String, token: String) async throws -> [Message] {
+        try await Task.sleep(nanoseconds: 400_000_000)
+        guard token == "mock_jwt_token_abc123" else { throw APIError.unauthorized }
+
+        let now = Date()
+        let other = "other_001"
+        let me = "usr_001"
+
+        let history: [Message] = [
+            Message(id: "\(chatId)_1", senderId: other, text: "Привет!", timestamp: now.addingTimeInterval(-3600)),
+            Message(id: "\(chatId)_2", senderId: me,    text: "Привет, как дела?", timestamp: now.addingTimeInterval(-3540)),
+            Message(id: "\(chatId)_3", senderId: other, text: "Всё хорошо, спасибо. Ты уже посмотрел задачу?", timestamp: now.addingTimeInterval(-3480)),
+            Message(id: "\(chatId)_4", senderId: me,    text: "Да, сейчас занимаюсь", timestamp: now.addingTimeInterval(-3400)),
+            Message(id: "\(chatId)_5", senderId: other, text: "Окей, жду", timestamp: now.addingTimeInterval(-3300)),
+        ]
+        return history
+    }
+
+    func sendMessage(chatId: String, text: String, token: String) async throws -> Message {
+        try await Task.sleep(nanoseconds: 200_000_000)
+        guard token == "mock_jwt_token_abc123" else { throw APIError.unauthorized }
+        return Message(id: UUID().uuidString, senderId: "usr_001", text: text, timestamp: Date())
     }
 }

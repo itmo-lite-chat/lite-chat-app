@@ -1,23 +1,4 @@
 import SwiftUI
-import Combine
-
-@MainActor
-final class ChatsViewModel: ObservableObject {
-    @Published var chats: [Chat] = []
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-
-    func fetchChats(token: String) async {
-        isLoading = true
-        errorMessage = nil
-        do {
-            chats = try await APIService.shared.fetchChats(token: token)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        isLoading = false
-    }
-}
 
 struct ChatListView: View {
     @EnvironmentObject var appState: AppState
@@ -36,9 +17,7 @@ struct ChatListView: View {
                         Text(error)
                     } actions: {
                         Button("Повторить") {
-                            Task {
-                                await vm.fetchChats(token: appState.currentUser?.token ?? "")
-                            }
+                            Task { await vm.fetchChats(token: appState.currentUser?.token ?? "") }
                         }
                         .buttonStyle(.borderedProminent)
                     }
@@ -59,17 +38,11 @@ struct ChatListView: View {
             .navigationTitle("Сообщения")
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Выйти") {
-                        appState.logout()
-                    }
-                    .foregroundStyle(.red)
+                    Button("Выйти") { appState.logout() }
+                        .foregroundStyle(.red)
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        // new chat
-                    } label: {
-                        Image(systemName: "square.and.pencil")
-                    }
+                    Button { } label: { Image(systemName: "square.and.pencil") }
                 }
             }
         }
@@ -84,7 +57,6 @@ struct ChatRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Avatar
             ZStack(alignment: .bottomTrailing) {
                 Circle()
                     .fill(avatarColor)
@@ -102,7 +74,6 @@ struct ChatRowView: View {
                 }
             }
 
-            // Text
             VStack(alignment: .leading, spacing: 3) {
                 HStack {
                     Text(chat.name)
@@ -135,8 +106,7 @@ struct ChatRowView: View {
 
     private var avatarColor: Color {
         let colors: [Color] = [.blue, .purple, .pink, .orange, .teal, .indigo]
-        let index = abs(chat.id.hashValue) % colors.count
-        return colors[index]
+        return colors[abs(chat.id.hashValue) % colors.count]
     }
 
     private func timeString(from date: Date) -> String {
@@ -144,13 +114,9 @@ struct ChatRowView: View {
         if diff < 60 { return "сейчас" }
         if diff < 3600 { return "\(Int(diff / 60)) мин" }
         if diff < 86400 {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "HH:mm"
-            return formatter.string(from: date)
+            let f = DateFormatter(); f.dateFormat = "HH:mm"; return f.string(from: date)
         }
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd.MM"
-        return formatter.string(from: date)
+        let f = DateFormatter(); f.dateFormat = "dd.MM"; return f.string(from: date)
     }
 }
 

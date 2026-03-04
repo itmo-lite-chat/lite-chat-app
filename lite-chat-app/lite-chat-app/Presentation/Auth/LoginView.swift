@@ -1,29 +1,4 @@
 import SwiftUI
-import Combine
-
-@MainActor
-final class LoginViewModel: ObservableObject {
-    @Published var username = ""
-    @Published var password = ""
-    @Published var isLoading = false
-    @Published var errorMessage: String?
-
-    func login(appState: AppState) async {
-        guard !username.isEmpty, !password.isEmpty else {
-            errorMessage = "Заполните все поля"
-            return
-        }
-        isLoading = true
-        errorMessage = nil
-        do {
-            let response = try await APIService.shared.login(username: username, password: password)
-            appState.login(user: response.user)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-        isLoading = false
-    }
-}
 
 struct LoginView: View {
     @EnvironmentObject var appState: AppState
@@ -39,7 +14,6 @@ struct LoginView: View {
             VStack(spacing: 0) {
                 Spacer()
 
-                // Logo
                 VStack(spacing: 12) {
                     ZStack {
                         Circle()
@@ -57,7 +31,6 @@ struct LoginView: View {
                 }
                 .padding(.bottom, 40)
 
-                // Form
                 VStack(spacing: 16) {
                     VStack(spacing: 0) {
                         HStack {
@@ -109,8 +82,7 @@ struct LoginView: View {
                             if vm.isLoading {
                                 ProgressView().tint(.white)
                             } else {
-                                Text("Войти")
-                                    .font(.headline)
+                                Text("Войти").font(.headline)
                             }
                         }
                         .frame(maxWidth: .infinity)
@@ -136,6 +108,5 @@ struct LoginView: View {
 }
 
 #Preview {
-    LoginView()
-        .environmentObject(AppState())
+    LoginView().environmentObject(AppState())
 }

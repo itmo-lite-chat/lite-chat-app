@@ -16,12 +16,3 @@ struct Chat: Codable, Identifiable {
     let unreadCount: Int
     let isOnline: Bool
 }
-
-struct LoginRequest: Codable {
-    let username: String
-    let password: String
-}
-
-struct LoginResponse: Codable {
-    let user: User
-}

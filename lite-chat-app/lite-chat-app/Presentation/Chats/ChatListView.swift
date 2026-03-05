@@ -41,10 +41,6 @@ struct ChatListView: View {
             }
             .navigationTitle("Сообщения")
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Выйти") { appState.logout() }
-                        .foregroundStyle(.red)
-                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { } label: { Image(systemName: "square.and.pencil") }
                 }

@@ -12,8 +12,17 @@ struct ContentView: View {
 
     var body: some View {
         if appState.isLoggedIn {
-            ChatListView()
-                .transition(.opacity)
+            TabView {
+                ChatListView()
+                    .tabItem {
+                        Label("Чаты", systemImage: "bubble.left.and.bubble.right")
+                    }
+                SettingsView()
+                    .tabItem {
+                        Label("Настройки", systemImage: "gearshape")
+                    }
+            }
+            .transition(.opacity)
         } else {
             LoginView()
                 .transition(.opacity)

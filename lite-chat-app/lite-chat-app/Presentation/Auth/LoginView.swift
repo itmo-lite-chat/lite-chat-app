@@ -97,7 +97,7 @@ struct LoginView: View {
 
                 Spacer()
 
-                Text("Подсказка: demo / password")
+                Text("Подсказка: random_username / aboba")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
                     .padding(.bottom, 16)

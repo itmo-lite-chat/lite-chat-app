@@ -23,6 +23,7 @@ struct ContentView: View {
                     }
             }
             .transition(.opacity)
+            .id(appState.currentUser?.id ?? "authenticated")
         } else {
             LoginView()
                 .transition(.opacity)

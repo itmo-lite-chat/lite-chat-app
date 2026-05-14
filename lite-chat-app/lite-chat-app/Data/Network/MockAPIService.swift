@@ -4,12 +4,14 @@ enum APIError: LocalizedError {
     case invalidCredentials
     case networkError
     case unauthorized
+    case requestFailed(String)
 
     var errorDescription: String? {
         switch self {
         case .invalidCredentials: return "Неверный логин или пароль"
         case .networkError: return "Ошибка сети, попробуйте позже"
         case .unauthorized: return "Сессия истекла, войдите снова"
+        case .requestFailed(let message): return message
         }
     }
 }
@@ -19,15 +21,17 @@ final class MockAPIService: AuthRepositoryProtocol, ChatRepositoryProtocol, Mess
     private init() {}
 
     private let baseURL = "https://api.lite-chat.example"
+    private let demoUsername = "demo"
+    private var demoUserId: String { "mock_\(demoUsername)" }
 
     func login(username: String, password: String) async throws -> User {
         try await Task.sleep(nanoseconds: 800_000_000)
-        guard username == "demo" && password == "password" else {
+        guard username == demoUsername && password == "password" else {
             throw APIError.invalidCredentials
         }
         return User(
-            id: "usr_001",
-            username: "demo",
+            id: "mock_\(username)",
+            username: demoUsername,
             displayName: "Demo User",
             token: "mock_jwt_token_abc123"
         )
@@ -55,13 +59,32 @@ final class MockAPIService: AuthRepositoryProtocol, ChatRepositoryProtocol, Mess
         ]
     }
 
+    func createPrivateChat(username: String, token: String) async throws -> Chat {
+        try await Task.sleep(nanoseconds: 300_000_000)
+        guard token == "mock_jwt_token_abc123" else { throw APIError.unauthorized }
+        return Chat(
+            id: "chat_private_\(username)",
+            name: username,
+            avatarInitials: String(username.prefix(1)).uppercased(),
+            lastMessage: "",
+            lastMessageTime: Date(),
+            unreadCount: 0,
+            isOnline: true
+        )
+    }
+
+    func deleteChat(chatId: String, token: String) async throws {
+        try await Task.sleep(nanoseconds: 200_000_000)
+        guard token == "mock_jwt_token_abc123" else { throw APIError.unauthorized }
+    }
+
     func fetchMessages(chatId: String, token: String) async throws -> [Message] {
         try await Task.sleep(nanoseconds: 400_000_000)
         guard token == "mock_jwt_token_abc123" else { throw APIError.unauthorized }
 
         let now = Date()
         let other = "other_001"
-        let me = "usr_001"
+        let me = demoUserId
 
         let history: [Message] = [
             Message(id: "\(chatId)_1", senderId: other, text: "Привет!", timestamp: now.addingTimeInterval(-3600)),
@@ -76,6 +99,17 @@ final class MockAPIService: AuthRepositoryProtocol, ChatRepositoryProtocol, Mess
     func sendMessage(chatId: String, text: String, token: String) async throws -> Message {
         try await Task.sleep(nanoseconds: 200_000_000)
         guard token == "mock_jwt_token_abc123" else { throw APIError.unauthorized }
-        return Message(id: UUID().uuidString, senderId: "usr_001", text: text, timestamp: Date())
+        return Message(id: UUID().uuidString, senderId: demoUserId, text: text, timestamp: Date())
+    }
+
+    func editMessage(chatId: String, messageId: String, text: String, token: String) async throws -> Message {
+        try await Task.sleep(nanoseconds: 200_000_000)
+        guard token == "mock_jwt_token_abc123" else { throw APIError.unauthorized }
+        return Message(id: messageId, senderId: demoUserId, text: text, timestamp: Date(), updatedAt: Date())
+    }
+
+    func deleteMessage(chatId: String, messageId: String, token: String) async throws {
+        try await Task.sleep(nanoseconds: 200_000_000)
+        guard token == "mock_jwt_token_abc123" else { throw APIError.unauthorized }
     }
 }

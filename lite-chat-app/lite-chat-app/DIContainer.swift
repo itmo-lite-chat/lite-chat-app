@@ -6,9 +6,9 @@ final class DIContainer {
     private init() {}
 
     #if DEBUG
-    let authUseCase = AuthUseCase(repository: MockAPIService.shared)
-    let chatsUseCase = ChatsUseCase(repository: MockAPIService.shared)
-    let messagesUseCase = MessagesUseCase(repository: MockAPIService.shared)
+    let authUseCase = AuthUseCase(repository: APIService.shared)
+    let chatsUseCase = ChatsUseCase(repository: APIService.shared)
+    let messagesUseCase = MessagesUseCase(repository: APIService.shared)
     #else
     let authUseCase = AuthUseCase(repository: APIService.shared)
     let chatsUseCase = ChatsUseCase(repository: APIService.shared)

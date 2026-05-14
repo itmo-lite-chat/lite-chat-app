@@ -22,4 +22,13 @@ struct Message: Codable, Identifiable {
     let senderId: String
     let text: String
     let timestamp: Date
+    let updatedAt: Date?
+
+    init(id: String, senderId: String, text: String, timestamp: Date, updatedAt: Date? = nil) {
+        self.id = id
+        self.senderId = senderId
+        self.text = text
+        self.timestamp = timestamp
+        self.updatedAt = updatedAt
+    }
 }

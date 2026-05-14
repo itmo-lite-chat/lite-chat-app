@@ -3,6 +3,8 @@ import SwiftUI
 struct ChatListView: View {
     @EnvironmentObject var appState: AppState
     @StateObject private var vm = ChatsViewModel()
+    @State private var isComposePresented = false
+    @State private var privateChatUsername = "bobik2"
 
     var body: some View {
         NavigationStack {
@@ -35,19 +37,75 @@ struct ChatListView: View {
                             ChatRowView(chat: chat)
                         }
                         .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+                        .swipeActions(edge: .trailing) {
+                            Button(role: .destructive) {
+                                Task {
+                                    await vm.deleteChat(chat, token: appState.currentUser?.token ?? "")
+                                }
+                            } label: {
+                                Label("Удалить", systemImage: "trash")
+                            }
+                        }
                     }
                     .listStyle(.plain)
+                    .refreshable {
+                        await vm.refreshChats(token: appState.currentUser?.token ?? "")
+                    }
                 }
             }
             .navigationTitle("Сообщения")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button { } label: { Image(systemName: "square.and.pencil") }
+                    Button {
+                        isComposePresented = true
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                    }
                 }
             }
         }
         .task {
             await vm.fetchChats(token: appState.currentUser?.token ?? "")
+        }
+        .onChange(of: appState.currentUser?.id) { _, newValue in
+            vm.clear()
+            guard newValue != nil else { return }
+            Task { await vm.fetchChats(token: appState.currentUser?.token ?? "") }
+        }
+        .sheet(isPresented: $isComposePresented) {
+            NavigationStack {
+                Form {
+                    Section {
+                        TextField("Username", text: $privateChatUsername)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                    }
+                }
+                .navigationTitle("Новый чат")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .cancellationAction) {
+                        Button("Отмена") {
+                            isComposePresented = false
+                        }
+                    }
+                    ToolbarItem(placement: .confirmationAction) {
+                        Button("Создать") {
+                            Task {
+                                let chat = await vm.createPrivateChat(
+                                    username: privateChatUsername,
+                                    token: appState.currentUser?.token ?? ""
+                                )
+                                if chat != nil {
+                                    isComposePresented = false
+                                }
+                            }
+                        }
+                        .disabled(privateChatUsername.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || vm.isLoading)
+                    }
+                }
+            }
+            .presentationDetents([.height(180)])
         }
     }
 }

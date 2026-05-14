@@ -4,6 +4,8 @@ struct ChatView: View {
     let chat: Chat
     @EnvironmentObject var appState: AppState
     @StateObject private var vm = ChatViewModel()
+    @State private var editingMessage: Message?
+    @State private var editedMessageText = ""
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,10 +22,35 @@ struct ChatView: View {
                                     isOwn: message.senderId == appState.currentUser?.id
                                 )
                                 .id(message.id)
+                                .contextMenu {
+                                    if message.senderId == appState.currentUser?.id {
+                                        Button {
+                                            editingMessage = message
+                                            editedMessageText = message.text
+                                        } label: {
+                                            Label("Редактировать", systemImage: "pencil")
+                                        }
+
+                                        Button(role: .destructive) {
+                                            Task {
+                                                await vm.deleteMessage(
+                                                    chatId: chat.id,
+                                                    messageId: message.id,
+                                                    token: appState.currentUser?.token ?? ""
+                                                )
+                                            }
+                                        } label: {
+                                            Label("Удалить", systemImage: "trash")
+                                        }
+                                    }
+                                }
                             }
                         }
                         .padding(.horizontal, 12)
                         .padding(.vertical, 8)
+                    }
+                    .refreshable {
+                        await vm.refreshMessages(chatId: chat.id, token: appState.currentUser?.token ?? "")
                     }
                     .onChange(of: vm.messages.count) { _, _ in
                         if let last = vm.messages.last {
@@ -43,6 +70,43 @@ struct ChatView: View {
         .task {
             await vm.fetchMessages(chatId: chat.id, token: appState.currentUser?.token ?? "")
         }
+        .onChange(of: appState.currentUser?.id) { _, newValue in
+            vm.clear()
+            guard newValue != nil else { return }
+            Task { await vm.fetchMessages(chatId: chat.id, token: appState.currentUser?.token ?? "") }
+        }
+        .alert("Редактировать сообщение", isPresented: editAlertBinding) {
+            TextField("Текст", text: $editedMessageText)
+            Button("Сохранить") {
+                guard let editingMessage else { return }
+                Task {
+                    await vm.editMessage(
+                        chatId: chat.id,
+                        messageId: editingMessage.id,
+                        text: editedMessageText,
+                        token: appState.currentUser?.token ?? ""
+                    )
+                    self.editingMessage = nil
+                    editedMessageText = ""
+                }
+            }
+            Button("Отмена", role: .cancel) {
+                editingMessage = nil
+                editedMessageText = ""
+            }
+        }
+    }
+
+    private var editAlertBinding: Binding<Bool> {
+        Binding(
+            get: { editingMessage != nil },
+            set: { isPresented in
+                if !isPresented {
+                    editingMessage = nil
+                    editedMessageText = ""
+                }
+            }
+        )
     }
 }
 
@@ -60,7 +124,7 @@ struct MessageBubble: View {
                     .background(isOwn ? Color.accentColor : Color(.systemGray5))
                     .foregroundColor(isOwn ? .white : .primary)
                     .clipShape(RoundedRectangle(cornerRadius: 18))
-                Text(timeString(from: message.timestamp))
+                Text(footerString(for: message))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
                     .padding(.horizontal, 4)
@@ -69,10 +133,11 @@ struct MessageBubble: View {
         }
     }
 
-    private func timeString(from date: Date) -> String {
+    private func footerString(for message: Message) -> String {
         let f = DateFormatter()
         f.dateFormat = "HH:mm"
-        return f.string(from: date)
+        let time = f.string(from: message.timestamp)
+        return message.updatedAt == nil ? time : "\(time) · изменено"
     }
 }
 
